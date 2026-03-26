@@ -31,12 +31,11 @@ pub fn Hero() -> Element {
     let mut second_value: Signal<String> = use_signal(|| String::new());
 
     let params = &Params {
-        first_param:first_value.read().to_string(), 
-        second_param:second_value.read().to_string(), 
-        operation:operation_value.read().to_string()
+        first_param: first_value.read().to_string(),
+        second_param: second_value.read().to_string(),
+        operation: operation_value.read().to_string(),
     };
     let result = procedure(params);
-    let inversed_value = change_signal(input_value.read().to_string());
 
     rsx! {
         main { class: "text-xl font-bold",
@@ -52,6 +51,7 @@ pub fn Hero() -> Element {
                             key: "{value} pm",
                             onclick: move |_e| {
                                 if *input_value.read() != "0" {
+                                    let inversed_value = change_signal(input_value.read().to_string());
                                     input_value.set(inversed_value.to_string());
                                     first_value.set(inversed_value.to_string());
                                 }
@@ -80,7 +80,14 @@ pub fn Hero() -> Element {
                     if value == "0" {
                         button {
                             key: "{i} dot",
-                            onclick: move |_e| input_value.push_str(value),
+                            onclick: move |_e| {
+                                input_value.push_str(".");
+                                if *waiting_second_value.read() {
+                                    second_value.push_str(".");
+                                } else {
+                                    first_value.push_str(".");
+                                }
+                            },
                             class: "border cursor-pointer",
                             "."
                         }
@@ -118,7 +125,7 @@ pub fn Hero() -> Element {
 }
 
 fn parse_param(param: String) -> f64{
-    match param.parse() {
+    match param.trim().parse() {
         Ok(num) => num,
         Err(_e) => {
             eprintln!("Failed to parse {param}");
