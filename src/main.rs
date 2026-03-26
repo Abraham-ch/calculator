@@ -36,6 +36,7 @@ pub fn Hero() -> Element {
         operation:operation_value.read().to_string()
     };
     let result = procedure(params);
+    let inversed_value = change_signal(input_value.read().to_string());
 
     rsx! {
         main { class: "text-xl font-bold",
@@ -49,7 +50,12 @@ pub fn Hero() -> Element {
                     if value == "0" {
                         button {
                             key: "{value} pm",
-                            onclick: move |_e| input_value.push_str(value),
+                            onclick: move |_e| {
+                                if *input_value.read() != "0" {
+                                    input_value.set(inversed_value.to_string());
+                                    first_value.set(inversed_value.to_string());
+                                }
+                            },
                             class: "border cursor-pointer",
                             "+/-"
                         }
@@ -121,6 +127,13 @@ fn parse_param(param: String) -> f64{
     }
 }
 
+fn change_signal(param: String) -> f64 {
+    let value: f64 = parse_param(param.clone());
+    let inversed_value: f64 = value * -1.0;
+
+    return inversed_value
+}
+
 fn procedure(params: &Params) -> f64 {
     
     let p1:f64 = parse_param(params.first_param.clone());
@@ -129,7 +142,7 @@ fn procedure(params: &Params) -> f64 {
     match params.operation.as_str() {
         "+" => p1 + p2,
         "-" => p1 - p2,
-        "*" => p1 * p2,
+        "x" => p1 * p2,
         "/" => p1 / p2,
         _   => 0.0
     }
