@@ -16,7 +16,6 @@ fn App() -> Element {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: TAILWIND_CSS }
         Hero {}
-
     }
 }
 
@@ -35,11 +34,59 @@ pub fn Hero() -> Element {
         second_param: second_value.read().to_string(),
         operation: operation_value.read().to_string(),
     };
-    let result = procedure(params);
+    let result = (procedure(params) * 100.0).round() / 100.0;
 
     rsx! {
         main { class: "text-xl font-bold",
-            section { class: "grid grid-cols-4 min-h-dvh min-w-full",
+            section {
+                class: "grid grid-cols-4 min-h-dvh min-w-full",
+                onkeydown: move |e| {
+                    let key: String = e.key().to_string();
+
+                    match key.as_str() {
+                        "." | "," => {
+                            input_value.push_str(key.as_str());
+                            if *waiting_second_value.read() {
+                                second_value.push_str(key.as_str());
+                            } else {
+                                first_value.push_str(key.as_str());
+                            }
+                        }
+                        "=" | "Enter" => {
+                            input_value.set(result.to_string());
+                            first_value.set(result.to_string());
+                            second_value.set(String::new());
+                            waiting_second_value.set(false);
+                        }
+                        "+" | "-" | "x" | "/" | "*" => {
+                            waiting_second_value.set(true);
+                            input_value.push_str(key.as_str());
+                            operation_value.set(key);
+                        }
+                        "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" => {
+                            if input_value() == "0" {
+                                input_value.set(key.clone());
+                                first_value.set(key);
+                            } else {
+                                input_value.push_str(key.as_str());
+                                if *waiting_second_value.read() {
+                                    second_value.push_str(key.as_str());
+                                } else {
+                                    first_value.push_str(key.as_str());
+                                }
+                            }
+                        }
+                        "Escape" => {
+                            input_value.clear();
+                            first_value.clear();
+                            second_value.clear();
+                            operation_value.clear();
+                            waiting_second_value.set(false);
+                        }
+                        _ => {}
+                    }
+                },
+                tabindex: 0,
                 input {
                     class: "border col-span-4 text-right pr-4",
                     placeholder: "0",
@@ -106,6 +153,7 @@ pub fn Hero() -> Element {
                                     input_value.set(result.to_string());
                                     first_value.set(result.to_string());
                                     second_value.set(String::new());
+                                    waiting_second_value.set(false);
                                 }
                             },
                             "{operation}"
@@ -118,6 +166,7 @@ pub fn Hero() -> Element {
                     li { "Your first value is: {first_value}" }
                     li { "Your operation is: {operation_value}" }
                     li { "Your second value is: {second_value}" }
+                    li { "Your input value is: {input_value}" }
                 }
             }
         }
@@ -149,7 +198,7 @@ fn procedure(params: &Params) -> f64 {
     match params.operation.as_str() {
         "+" => p1 + p2,
         "-" => p1 - p2,
-        "x" => p1 * p2,
+        "x"|"*" => p1 * p2,
         "/" => p1 / p2,
         _   => 0.0
     }
